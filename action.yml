@@ -1,0 +1,84 @@
+---
+name: Multiple Watchtowers Update
+description: Trigger several Watchtower HTTP API update endpoints.
+author: Mayurifag
+
+inputs:
+  url-prefix:
+    description: Environment variable prefix for Watchtower URLs.
+    required: false
+    default: WATCHTOWER_URL
+  token-prefix:
+    description: Environment variable prefix for Watchtower API tokens.
+    required: false
+    default: WATCHTOWER_HTTP_API_TOKEN
+  timeout-seconds:
+    description: Maximum time for each Watchtower request.
+    required: false
+    default: "300"
+
+runs:
+  using: composite
+  steps:
+    - name: Trigger Watchtower updates
+      shell: bash
+      env:
+        URL_PREFIX: ${{ inputs.url-prefix }}
+        TOKEN_PREFIX: ${{ inputs.token-prefix }}
+        TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+      run: |
+        set -euo pipefail
+
+        if [[ ! "${URL_PREFIX}" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+          echo "url-prefix must be an environment variable prefix" >&2
+          exit 1
+        fi
+
+        if [[ ! "${TOKEN_PREFIX}" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+          echo "token-prefix must be an environment variable prefix" >&2
+          exit 1
+        fi
+
+        if [[ ! "${TIMEOUT_SECONDS}" =~ ^[0-9]+$ ]] || [[ "${TIMEOUT_SECONDS}" -lt 1 ]]; then
+          echo "timeout-seconds must be a positive integer" >&2
+          exit 1
+        fi
+
+        indexes=$(
+          env | while IFS='=' read -r name _; do
+            if [[ "${name}" =~ ^${URL_PREFIX}_([1-9][0-9]*)$ ]]; then
+              printf '%s\n' "${BASH_REMATCH[1]}"
+            elif [[ "${name}" =~ ^${TOKEN_PREFIX}_([1-9][0-9]*)$ ]]; then
+              printf '%s\n' "${BASH_REMATCH[1]}"
+            fi
+          done | sort -n -u
+        )
+
+        if [[ -z "${indexes}" ]]; then
+          echo "No Watchtower secret pairs found" >&2
+          exit 1
+        fi
+
+        count=0
+        while IFS= read -r index; do
+          url_name="${URL_PREFIX}_${index}"
+          token_name="${TOKEN_PREFIX}_${index}"
+          url="${!url_name:-}"
+          token="${!token_name:-}"
+
+          if [[ -z "${url}" || -z "${token}" ]]; then
+            echo "Watchtower ${index} is missing URL or token" >&2
+            exit 1
+          fi
+
+          echo "Triggering Watchtower ${index}"
+          curl --silent --show-error --fail --connect-timeout 20 --max-time "${TIMEOUT_SECONDS}" --header "Authorization: Bearer ${token}" "${url}" >/dev/null
+          echo "Triggered Watchtower ${index}"
+          count=$((count + 1))
+        done <<< "${indexes}"
+
+        echo "Triggered ${count} Watchtower update(s)"
+
+branding:
+  icon: refresh-cw
+  color: blue
