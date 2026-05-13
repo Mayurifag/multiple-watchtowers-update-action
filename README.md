@@ -1,6 +1,6 @@
 # Multiple Watchtowers Update Action
 
-[![Linters](https://github.com/Mayurifag/multiple-watchtowers-update-action/actions/workflows/lint.yml/badge.svg)](https://github.com/Mayurifag/multiple-watchtowers-update-action/actions/workflows/lint.yml)
+[![CI](https://github.com/Mayurifag/multiple-watchtowers-update-action/actions/workflows/ci.yml/badge.svg)](https://github.com/Mayurifag/multiple-watchtowers-update-action/actions/workflows/ci.yml)
 
 Triggers many (or one) [Watchtower](https://watchtower.nickfedor.com/) HTTP API update endpoints in parallel.
 
