@@ -22,7 +22,7 @@ jobs:
   update-watchtowers:
     runs-on: ubuntu-latest
     steps:
-      - uses: Mayurifag/multiple-watchtowers-update-action@master
+      - uses: Mayurifag/multiple-watchtowers-update-action@de292589ee2d6e76c91aa51490b299d0d3feb435
         with:
           watchtower-urls: ${{ secrets.WATCHTOWER_URLS }}
           watchtower-tokens: ${{ secrets.WATCHTOWER_TOKENS }}
